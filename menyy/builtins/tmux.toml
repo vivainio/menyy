@@ -1,0 +1,16 @@
+[t]
+label = "tmux"
+
+[t.k]
+label = "kill other panes"
+run = "tmux kill-pane -a"
+
+[t.r]
+label = "rename window"
+pick = "printf '' | fzf --print-query --prompt='new name> '"
+run = "tmux rename-window {}"
+
+[t.s]
+label = "switch session"
+pick = "tmux list-sessions -F '#S' | fzf"
+run = "tmux switch-client -t {}"

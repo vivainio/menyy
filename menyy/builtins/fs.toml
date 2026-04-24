@@ -1,0 +1,11 @@
+[f]
+label = "files"
+
+[f.o]
+label = "open file manager here"
+run = "xdg-open . >/dev/null 2>&1 &"
+
+[f.c]
+label = "copy file path"
+pick = "find . -maxdepth 4 -type f 2>/dev/null | fzf"
+run = "printf '%s' {} | tmux load-buffer -"

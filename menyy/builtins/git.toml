@@ -1,0 +1,23 @@
+[g]
+label = "git"
+
+[g.b]
+label = "copy current branch"
+run = "git branch --show-current | tr -d '\\n' | tmux load-buffer -"
+
+[g.c]
+label = "checkout branch"
+pick = "git branch --format='%(refname:short)' | fzf"
+run = "git checkout {}"
+
+[g.s]
+label = "status"
+run = "git status"
+
+[g.l]
+label = "log (last 20)"
+run = "git log --oneline -20"
+
+[g.p]
+label = "pull"
+run = "git pull"

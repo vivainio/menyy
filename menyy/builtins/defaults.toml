@@ -1,0 +1,14 @@
+[c]
+label = "clipboard"
+
+[c.d]
+label = "copy current directory"
+run = "pwd | tr -d '\\n' | tmux load-buffer -"
+
+[c.p]
+label = "copy current directory path (absolute)"
+run = "realpath . | tr -d '\\n' | tmux load-buffer -"
+
+[q]
+label = "quit"
+run = "true"
