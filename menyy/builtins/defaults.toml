@@ -3,11 +3,11 @@ label = "clipboard"
 
 [c.d]
 label = "copy current directory"
-run = "pwd | tr -d '\\n' | tmux load-buffer -"
+run = "pwd | tr -d '\\n' | $MENYY --copy"
 
 [c.p]
 label = "copy current directory path (absolute)"
-run = "realpath . | tr -d '\\n' | tmux load-buffer -"
+run = "realpath . | tr -d '\\n' | $MENYY --copy"
 
 [q]
 label = "quit"
