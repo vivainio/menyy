@@ -122,14 +122,28 @@ def flatten_leaves(
 def run_action(action: dict[str, Any]) -> int:
     env = {**os.environ, "MENYY": f"{sys.executable} -m menyy"}
     cmd = action["run"]
-    if "pick" in action:
+    if "prompt" in action:
+        with open("/dev/tty") as tty_in, open("/dev/tty", "w") as tty_out:
+            tty_out.write(f"{action['prompt']}: ")
+            tty_out.flush()
+            value = tty_in.readline().strip()
+        if not value:
+            return 130
+        cmd = cmd.replace("{}", value)
+    elif "pick" in action:
         pick = subprocess.run(
             action["pick"], shell=True, stdout=subprocess.PIPE, text=True, env=env
         )
-        if pick.returncode != 0 or not pick.stdout.strip():
+        if pick.returncode == 130 or not pick.stdout.strip():
             return 130
         value = pick.stdout.strip()
         cmd = cmd.replace("{}", value)
+    post = action.get("post")
+    if post == "copy":
+        result = subprocess.run(cmd, shell=True, env=env, stdout=subprocess.PIPE, text=True)
+        if result.returncode == 0:
+            copy_to_clipboard(result.stdout.rstrip("\n"))
+        return result.returncode
     return subprocess.run(cmd, shell=True, env=env).returncode
 
 
@@ -168,10 +182,9 @@ def navigate(node: dict[str, Any], search_key: str, top_level: bool) -> int:
     return 1
 
 
-def cmd_copy() -> None:
+def copy_to_clipboard(data: str) -> None:
     import shutil
 
-    data = sys.stdin.read()
     is_wsl = bool(os.environ.get("WSL_DISTRO_NAME"))
     candidates = [
         (["wl-copy"], None),
@@ -192,6 +205,10 @@ def cmd_copy() -> None:
         subprocess.run(["tmux", "load-buffer", "-"], input=data, text=True, check=False)
         return
     sys.exit("menyy: no clipboard tool found (tried wl-copy, xclip, xsel, pbcopy, clip.exe, tmux)")
+
+
+def cmd_copy() -> None:
+    copy_to_clipboard(sys.stdin.read())
 
 
 def cmd_list_builtins() -> None:

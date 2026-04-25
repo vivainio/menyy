@@ -7,10 +7,21 @@ run = "tmux kill-pane -a"
 
 [t.r]
 label = "rename window"
-pick = "printf '' | fzf --print-query --prompt='new name> '"
+prompt = "new window name"
 run = "tmux rename-window {}"
 
 [t.s]
 label = "switch session"
 pick = "tmux list-sessions -F '#S' | fzf"
 run = "tmux switch-client -t {}"
+
+[t.w]
+label = "start/switch workspace (claude + helix)"
+run = """
+name=$(basename "$PWD")
+tmux has-session -t "$name" 2>/dev/null || {
+  tmux new-session -d -s "$name" -c "$PWD" -n claude "claude"
+  tmux new-window -t "$name:" -c "$PWD" -n editor "hx ."
+}
+tmux switch-client -t "$name"
+"""
