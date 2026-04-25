@@ -21,7 +21,7 @@ call = "menyy.tmux:workspace_launch"
 
 [t.z]
 label = "start/switch session in zoxide dir"
-pick = "zoxide query -l | fzf --prompt='zoxide> '"
+pick = "zoxide query -l | sed \"s|^$HOME|~|\" | fzf --prompt='zoxide> ' | sed \"s|^~|$HOME|\""
 call = "menyy.tmux:workspace_launch"
 
 [t.S]
