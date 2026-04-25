@@ -15,29 +15,19 @@ label = "switch session"
 pick = "tmux list-sessions -F '#S' | fzf"
 run = "tmux switch-client -t {}"
 
+[t.w]
+label = "start/switch workspace (claude)"
+call = "menyy.tmux:workspace_launch"
+
+[t.z]
+label = "start/switch session in zoxide dir"
+pick = "zoxide query -l | fzf --prompt='zoxide> '"
+call = "menyy.tmux:workspace_launch"
+
 [t.S]
 label = "save tmux session snapshot"
-run = "$MENYY --tmux-save"
+call = "menyy.tmux:save"
 
 [t.R]
 label = "restore tmux session snapshot"
-run = "$MENYY --tmux-restore"
-
-[t.w]
-label = "start/switch workspace (claude)"
-run = """
-name=$(basename "$PWD")
-if ! tmux has-session -t "$name" 2>/dev/null; then
-  if claude conversation list --limit 1 2>/dev/null | grep -q .; then
-    cmd="claude --continue"
-  else
-    cmd="claude"
-  fi
-  tmux new-session -d -s "$name" -c "$PWD" -n "$name" "$cmd"
-fi
-if [ -n "$TMUX" ]; then
-  tmux switch-client -t "$name"
-else
-  tmux attach-session -t "$name"
-fi
-"""
+call = "menyy.tmux:restore"

@@ -8,6 +8,28 @@ from pathlib import Path
 from typing import Any
 
 
+def workspace_launch(dir_: str | None = None) -> None:
+    dir_ = dir_ or os.getcwd()
+    name = os.path.basename(os.path.abspath(dir_))
+    has = subprocess.run(
+        ["tmux", "has-session", "-t", name],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    ).returncode == 0
+    if not has:
+        cmd = "claude"
+        check = subprocess.run(
+            ["claude", "conversation", "list", "--limit", "1"],
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
+        )
+        if check.returncode == 0 and check.stdout.strip():
+            cmd = "claude --continue"
+        subprocess.run(["tmux", "new-session", "-d", "-s", name, "-c", dir_, "-n", name, cmd], check=False)
+    if os.environ.get("TMUX"):
+        subprocess.run(["tmux", "switch-client", "-t", name], check=False)
+    else:
+        os.execvp("tmux", ["tmux", "attach-session", "-t", name])
+
+
 def snapshot_path() -> Path:
     state = os.environ.get("XDG_STATE_HOME") or "~/.local/state"
     return Path(state).expanduser() / "menyy" / "tmux-snapshot.json"

@@ -79,8 +79,22 @@ def menu_entries(node: dict[str, Any]) -> list[tuple[str, str, dict[str, Any]]]:
     return entries
 
 
-def fzf_select(lines: list[str], one_accept: bool, prompt: str) -> str | None:
-    args = ["fzf", "--no-sort", "--prompt", prompt]
+def context_header() -> str:
+    home = os.path.expanduser("~")
+    cwd = os.getcwd()
+    if cwd.startswith(home):
+        cwd = "~" + cwd[len(home):]
+    branch = subprocess.run(
+        ["git", "branch", "--show-current"],
+        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
+    ).stdout.strip()
+    return f"{cwd} [{branch}]" if branch else cwd
+
+
+def fzf_select(lines: list[str], one_accept: bool, prompt: str, header: str = "") -> str | None:
+    args = ["fzf", "--no-sort", "+i", "--prompt", prompt]
+    if header:
+        args += ["--header", header]
     if one_accept:
         args += [
             "--bind",
@@ -114,29 +128,51 @@ def flatten_leaves(
         sub = path + [v.get("label", k)]
         if is_menu(v):
             leaves.extend(flatten_leaves(v, sub))
-        elif "run" in v:
+        elif "run" in v or "call" in v:
             leaves.append((sub, v))
     return leaves
 
 
-def run_action(action: dict[str, Any]) -> int:
-    env = {**os.environ, "MENYY": f"{sys.executable} -m menyy"}
-    cmd = action["run"]
+def resolve_value(action: dict[str, Any], env: dict[str, str]) -> tuple[str | None, int]:
     if "prompt" in action:
         with open("/dev/tty") as tty_in, open("/dev/tty", "w") as tty_out:
             tty_out.write(f"{action['prompt']}: ")
             tty_out.flush()
             value = tty_in.readline().strip()
         if not value:
-            return 130
-        cmd = cmd.replace("{}", value)
-    elif "pick" in action:
+            return None, 130
+        return value, 0
+    if "pick" in action:
         pick = subprocess.run(
             action["pick"], shell=True, stdout=subprocess.PIPE, text=True, env=env
         )
         if pick.returncode == 130 or not pick.stdout.strip():
-            return 130
-        value = pick.stdout.strip()
+            return None, 130
+        return pick.stdout.strip(), 0
+    return None, 0
+
+
+def call_python(spec: str, value: str | None) -> int:
+    import importlib
+
+    mod_name, _, fn_name = spec.partition(":")
+    if not fn_name:
+        sys.exit(f"menyy: invalid call '{spec}' (expected module:function)")
+    fn = getattr(importlib.import_module(mod_name), fn_name)
+    args = (value,) if value is not None else ()
+    rc = fn(*args)
+    return rc if isinstance(rc, int) else 0
+
+
+def run_action(action: dict[str, Any]) -> int:
+    env = {**os.environ, "MENYY": f"{sys.executable} -m menyy"}
+    value, rc = resolve_value(action, env)
+    if rc:
+        return rc
+    if "call" in action:
+        return call_python(action["call"], value)
+    cmd = action["run"]
+    if value is not None:
         cmd = cmd.replace("{}", value)
     post = action.get("post")
     if post == "copy":
@@ -152,7 +188,7 @@ def run_flat_search(root: dict[str, Any]) -> int:
     if not leaves:
         sys.exit("menyy: no actions available")
     lines = [" / ".join(path) for path, _ in leaves]
-    selection = fzf_select(lines, one_accept=False, prompt="search> ")
+    selection = fzf_select(lines, one_accept=False, prompt="search> ", header=context_header())
     if selection is None:
         return 130
     for path, action in leaves:
@@ -166,7 +202,7 @@ def navigate(node: dict[str, Any], search_key: str, top_level: bool) -> int:
     lines = [f"{k}\t{label}" for k, label, _ in entries]
     if top_level:
         lines.append(f"{search_key}\tsearch all actions")
-    selection = fzf_select(lines, one_accept=True, prompt="menyy> ")
+    selection = fzf_select(lines, one_accept=True, prompt="menyy> ", header=context_header())
     if selection is None:
         return 130
     key = selection.split("\t", 1)[0]
@@ -176,9 +212,9 @@ def navigate(node: dict[str, Any], search_key: str, top_level: bool) -> int:
         if k == key:
             if is_menu(sub):
                 return navigate(sub, search_key, top_level=False)
-            if "run" in sub:
+            if "run" in sub or "call" in sub:
                 return run_action(sub)
-            sys.exit(f"menyy: entry '{k}' has neither submenu nor 'run'")
+            sys.exit(f"menyy: entry '{k}' has neither submenu nor 'run'/'call'")
     return 1
 
 
