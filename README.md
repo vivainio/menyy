@@ -47,6 +47,7 @@ run = "git push"
 - **`run`** — shell command to execute. `{}` is replaced with the value from `pick`/`prompt`.
 - **`call`** — Python function to invoke instead of shelling out. Format: `"module:function"`. The picked/prompted value (if any) is passed as the single positional arg.
 - **`pick`** — shell command whose stdout becomes the value. Typically pipes into `fzf`.
+- **`pick_call`** — Python function (`"module:function"`) whose return value becomes the picked value. Returning `None` or empty string cancels the action. Use when shell pipelines get unwieldy.
 - **`prompt`** — shows a prompt on the tty and reads a line of input.
 - **`post`** — post-action: currently `"copy"` captures stdout and sends it to the clipboard.
 - **`keep_open`** — if `true` *and* `$MENYY_POPUP` is set, wait for Enter after the action runs. Use for informational commands (`git status`, `git log`) so the output stays visible when running inside a tmux popup. No-op outside the popup.

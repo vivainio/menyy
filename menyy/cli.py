@@ -142,6 +142,16 @@ def resolve_value(action: dict[str, Any], env: dict[str, str]) -> tuple[str | No
         if not value:
             return None, 130
         return value, 0
+    if "pick_call" in action:
+        import importlib
+
+        mod_name, _, fn_name = action["pick_call"].partition(":")
+        if not fn_name:
+            sys.exit(f"menyy: invalid pick_call '{action['pick_call']}'")
+        value = getattr(importlib.import_module(mod_name), fn_name)()
+        if not value:
+            return None, 130
+        return value, 0
     if "pick" in action:
         pick = subprocess.run(
             action["pick"], shell=True, stdout=subprocess.PIPE, text=True, env=env
