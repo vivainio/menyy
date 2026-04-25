@@ -228,10 +228,20 @@ def main() -> None:
     parser.add_argument("--list-builtins", action="store_true")
     parser.add_argument("--show-config", action="store_true")
     parser.add_argument("--copy", action="store_true", help="read stdin and copy to clipboard")
+    parser.add_argument("--tmux-save", action="store_true", help="snapshot all tmux sessions")
+    parser.add_argument("--tmux-restore", action="store_true", help="restore tmux sessions from snapshot")
     args = parser.parse_args()
 
     if args.copy:
         cmd_copy()
+        return
+    if args.tmux_save:
+        from menyy import tmux
+        tmux.save()
+        return
+    if args.tmux_restore:
+        from menyy import tmux
+        tmux.restore()
         return
     if args.list_builtins:
         cmd_list_builtins()
