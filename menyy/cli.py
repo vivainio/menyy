@@ -164,13 +164,28 @@ def call_python(spec: str, value: str | None) -> int:
     return rc if isinstance(rc, int) else 0
 
 
+def pause() -> None:
+    if not os.environ.get("MENYY_POPUP"):
+        return
+    try:
+        with open("/dev/tty") as tty_in, open("/dev/tty", "w") as tty_out:
+            tty_out.write("\n[press enter to close]")
+            tty_out.flush()
+            tty_in.readline()
+    except OSError:
+        pass
+
+
 def run_action(action: dict[str, Any]) -> int:
     env = {**os.environ, "MENYY": f"{sys.executable} -m menyy"}
     value, rc = resolve_value(action, env)
     if rc:
         return rc
     if "call" in action:
-        return call_python(action["call"], value)
+        result_rc = call_python(action["call"], value)
+        if action.get("keep_open"):
+            pause()
+        return result_rc
     cmd = action["run"]
     if value is not None:
         cmd = cmd.replace("{}", value)
@@ -179,8 +194,13 @@ def run_action(action: dict[str, Any]) -> int:
         result = subprocess.run(cmd, shell=True, env=env, stdout=subprocess.PIPE, text=True)
         if result.returncode == 0:
             copy_to_clipboard(result.stdout.rstrip("\n"))
+        if action.get("keep_open"):
+            pause()
         return result.returncode
-    return subprocess.run(cmd, shell=True, env=env).returncode
+    rc = subprocess.run(cmd, shell=True, env=env).returncode
+    if action.get("keep_open"):
+        pause()
+    return rc
 
 
 def run_flat_search(root: dict[str, Any]) -> int:

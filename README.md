@@ -23,10 +23,10 @@ The picker is case-sensitive, so `s` and `S` are distinct hotkeys.
 Add to `~/.tmux.conf`:
 
 ```tmux
-bind m display-popup -E -d "#{pane_current_path}" -y 0% -w 60% -h 60% "menyy"
+bind m display-popup -E -d "#{pane_current_path}" -e MENYY_POPUP=1 -y 0% -w 90% -h 80% "menyy"
 ```
 
-`prefix m` opens menyy in a centered floating window.
+`prefix m` opens menyy in a centered floating window. `MENYY_POPUP=1` is what makes `keep_open` actions pause for Enter so output stays visible — outside the popup it's a no-op.
 
 ## Configuration
 
@@ -49,6 +49,7 @@ run = "git push"
 - **`pick`** — shell command whose stdout becomes the value. Typically pipes into `fzf`.
 - **`prompt`** — shows a prompt on the tty and reads a line of input.
 - **`post`** — post-action: currently `"copy"` captures stdout and sends it to the clipboard.
+- **`keep_open`** — if `true` *and* `$MENYY_POPUP` is set, wait for Enter after the action runs. Use for informational commands (`git status`, `git log`) so the output stays visible when running inside a tmux popup. No-op outside the popup.
 - **`hide`** — drop the entry from the menu (useful for shadowing built-ins).
 
 A node is a submenu if any of its values is a table; otherwise it's an action.

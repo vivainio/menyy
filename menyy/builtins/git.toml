@@ -13,14 +13,17 @@ run = "git checkout {}"
 [g.s]
 label = "status"
 run = "git status"
+keep_open = true
 
 [g.l]
 label = "log (last 20)"
 run = "git log --oneline -20"
+keep_open = true
 
 [g.p]
 label = "pull"
 run = "git pull"
+keep_open = true
 
 [g.r]
 label = "copy recent branch"
