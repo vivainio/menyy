@@ -30,6 +30,34 @@ def workspace_launch(dir_: str | None = None) -> None:
         os.execvp("tmux", ["tmux", "attach-session", "-t", name])
 
 
+IDLE_SHELLS = {"bash", "zsh", "nu", "fish", "sh", "dash", "ksh"}
+
+
+def kill_idle_shells() -> None:
+    fmt = "#{pane_id}\t#{pane_current_command}\t#{pane_in_mode}\t#{session_name}:#{window_index}.#{pane_index}"
+    result = subprocess.run(
+        ["tmux", "list-panes", "-a", "-F", fmt],
+        stdout=subprocess.PIPE, text=True, check=True,
+    )
+    current = os.environ.get("TMUX_PANE")
+    killed = 0
+    for line in result.stdout.splitlines():
+        parts = line.split("\t")
+        if len(parts) != 4:
+            continue
+        pane_id, cmd, in_mode, label = parts
+        if pane_id == current:
+            continue
+        if in_mode != "0":
+            continue
+        if cmd not in IDLE_SHELLS:
+            continue
+        subprocess.run(["tmux", "kill-pane", "-t", pane_id], check=False)
+        print(f"killed {label} ({cmd})")
+        killed += 1
+    print(f"killed {killed} idle shell pane(s)")
+
+
 def snapshot_path() -> Path:
     state = os.environ.get("XDG_STATE_HOME") or "~/.local/state"
     return Path(state).expanduser() / "menyy" / "tmux-snapshot.json"
