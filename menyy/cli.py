@@ -9,7 +9,7 @@ from importlib import resources
 from pathlib import Path
 from typing import Any
 
-BUILTINS = ["defaults", "git", "tmux", "fs"]
+BUILTINS = ["defaults", "git", "tmux", "herdr", "fs"]
 DEFAULT_SEARCH_KEY = "/"
 
 
@@ -83,10 +83,12 @@ def context_header() -> str:
     home = os.path.expanduser("~")
     cwd = os.getcwd()
     if cwd.startswith(home):
-        cwd = "~" + cwd[len(home):]
+        cwd = "~" + cwd[len(home) :]
     branch = subprocess.run(
         ["git", "branch", "--show-current"],
-        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        text=True,
     ).stdout.strip()
     return f"{cwd} [{branch}]" if branch else cwd
 
@@ -295,7 +297,9 @@ def main() -> None:
     parser.add_argument("--show-config", action="store_true")
     parser.add_argument("--copy", action="store_true", help="read stdin and copy to clipboard")
     parser.add_argument("--tmux-save", action="store_true", help="snapshot all tmux sessions")
-    parser.add_argument("--tmux-restore", action="store_true", help="restore tmux sessions from snapshot")
+    parser.add_argument(
+        "--tmux-restore", action="store_true", help="restore tmux sessions from snapshot"
+    )
     args = parser.parse_args()
 
     if args.copy:
@@ -303,10 +307,12 @@ def main() -> None:
         return
     if args.tmux_save:
         from menyy import tmux
+
         tmux.save()
         return
     if args.tmux_restore:
         from menyy import tmux
+
         tmux.restore()
         return
     if args.list_builtins:

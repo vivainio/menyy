@@ -11,19 +11,27 @@ from typing import Any
 def workspace_launch(dir_: str | None = None) -> None:
     dir_ = dir_ or os.getcwd()
     name = os.path.basename(os.path.abspath(dir_))
-    has = subprocess.run(
-        ["tmux", "has-session", "-t", name],
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-    ).returncode == 0
+    has = (
+        subprocess.run(
+            ["tmux", "has-session", "-t", name],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        ).returncode
+        == 0
+    )
     if not has:
         cmd = "claude"
         check = subprocess.run(
             ["claude", "conversation", "list", "--limit", "1"],
-            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
         )
         if check.returncode == 0 and check.stdout.strip():
             cmd = "claude --continue"
-        subprocess.run(["tmux", "new-session", "-d", "-s", name, "-c", dir_, "-n", name, cmd], check=False)
+        subprocess.run(
+            ["tmux", "new-session", "-d", "-s", name, "-c", dir_, "-n", name, cmd], check=False
+        )
     if os.environ.get("TMUX"):
         subprocess.run(["tmux", "switch-client", "-t", name], check=False)
     else:
@@ -34,10 +42,15 @@ IDLE_SHELLS = {"bash", "zsh", "nu", "fish", "sh", "dash", "ksh"}
 
 
 def kill_idle_shells() -> None:
-    fmt = "#{pane_id}\t#{pane_current_command}\t#{pane_in_mode}\t#{session_name}:#{window_index}.#{pane_index}"
+    fmt = (
+        "#{pane_id}\t#{pane_current_command}\t#{pane_in_mode}\t"
+        "#{session_name}:#{window_index}.#{pane_index}"
+    )
     result = subprocess.run(
         ["tmux", "list-panes", "-a", "-F", fmt],
-        stdout=subprocess.PIPE, text=True, check=True,
+        stdout=subprocess.PIPE,
+        text=True,
+        check=True,
     )
     current = os.environ.get("TMUX_PANE")
     killed = 0
@@ -64,10 +77,15 @@ def snapshot_path() -> Path:
 
 
 def save() -> None:
-    fmt = "#{session_name}\t#{window_index}\t#{window_name}\t#{pane_current_path}\t#{pane_current_command}"
+    fmt = (
+        "#{session_name}\t#{window_index}\t#{window_name}\t"
+        "#{pane_current_path}\t#{pane_current_command}"
+    )
     result = subprocess.run(
         ["tmux", "list-windows", "-a", "-F", fmt],
-        stdout=subprocess.PIPE, text=True, check=True,
+        stdout=subprocess.PIPE,
+        text=True,
+        check=True,
     )
     sessions: dict[str, list[dict[str, Any]]] = {}
     for line in result.stdout.splitlines():
@@ -92,10 +110,14 @@ def restore() -> None:
     data = json.loads(path.read_text())
     for sess in data:
         name = sess["name"]
-        exists = subprocess.run(
-            ["tmux", "has-session", "-t", name],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        ).returncode == 0
+        exists = (
+            subprocess.run(
+                ["tmux", "has-session", "-t", name],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            ).returncode
+            == 0
+        )
         if exists:
             continue
         windows = sorted(sess["windows"], key=lambda w: w["index"])

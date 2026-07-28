@@ -8,16 +8,20 @@ def zoxide() -> str | None:
     """Pick a directory from zoxide; return absolute path or None on cancel."""
     listing = subprocess.run(
         ["zoxide", "query", "-l"],
-        stdout=subprocess.PIPE, text=True, check=True,
+        stdout=subprocess.PIPE,
+        text=True,
+        check=True,
     ).stdout
     home = os.path.expanduser("~")
     display = "\n".join(
-        ("~" + line[len(home):]) if line.startswith(home) else line
+        ("~" + line[len(home) :]) if line.startswith(home) else line
         for line in listing.splitlines()
     )
     picked = subprocess.run(
         ["fzf", "--no-sort", "+i", "--prompt", "zoxide> "],
-        input=display, stdout=subprocess.PIPE, text=True,
+        input=display,
+        stdout=subprocess.PIPE,
+        text=True,
     )
     if picked.returncode != 0:
         return None
