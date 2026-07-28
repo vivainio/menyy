@@ -33,7 +33,7 @@ bind m display-popup -E -d "#{pane_current_path}" -e MENYY_POPUP=1 -y 0% -w 90% 
 User config lives at `$XDG_CONFIG_HOME/menyy/actions.toml` (default `~/.config/menyy/actions.toml`). If absent, all built-in modules are loaded; if present, only the modules listed in `include` are loaded.
 
 ```toml
-include = ["git", "tmux", "herdr", "fs"]
+include = ["git", "tmux", "fs"]
 search_key = "/"
 
 [g.p]
@@ -112,8 +112,7 @@ hide = true
 
 - **defaults** — top-level fall-throughs.
 - **git** — common git operations, branch picker, recent-branches.
-- **tmux** — kill panes, switch session, save/restore session snapshot, workspace launch (with `claude --continue` for resumed sessions), zoxide-driven session start.
-- **herdr** — launch or focus Claude workspaces from the current or a zoxide-selected directory.
+- **tmux** — terminal and workspace actions under `t`; workspace launches use Herdr or tmux based on the active environment.
 - **fs** — open file manager, copy file path (relative or absolute).
 
 `menyy --list-builtins` lists them; `menyy --show-config` dumps the resolved tree.

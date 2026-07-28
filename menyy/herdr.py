@@ -48,6 +48,22 @@ def focus_workspace(workspace_id: str) -> None:
     _run_json(["workspace", "focus", workspace_id])
 
 
+def _start_agent(args: list[str]) -> None:
+    if not os.environ.get("MENYY_POPUP"):
+        _run_json(args)
+        return
+    try:
+        subprocess.Popen(
+            ["herdr", *args],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    except FileNotFoundError:
+        sys.exit("menyy: herdr not found in PATH")
+
+
 def workspace_launch(dir_: str | None = None) -> None:
     """Focus a project workspace, or create it and start Claude."""
     cwd = str(Path(dir_ or os.getcwd()).expanduser().resolve())
@@ -82,4 +98,4 @@ def workspace_launch(dir_: str | None = None) -> None:
     )
     if check.returncode == 0 and check.stdout.strip():
         agent_args.extend(["--", "--continue"])
-    _run_json(agent_args)
+    _start_agent(agent_args)

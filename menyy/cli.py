@@ -9,7 +9,7 @@ from importlib import resources
 from pathlib import Path
 from typing import Any
 
-BUILTINS = ["defaults", "git", "tmux", "herdr", "fs"]
+BUILTINS = ["defaults", "git", "tmux", "fs"]
 DEFAULT_SEARCH_KEY = "/"
 
 

@@ -1,5 +1,14 @@
 [t]
-label = "tmux"
+label = "terminal"
+
+[t.w]
+label = "start/switch workspace (claude)"
+call = "menyy.workspace:launch"
+
+[t.z]
+label = "start/switch workspace in zoxide dir"
+pick_call = "menyy.pickers:zoxide"
+call = "menyy.workspace:launch"
 
 [t.k]
 label = "kill other panes"
@@ -19,15 +28,6 @@ run = "tmux rename-window {}"
 label = "switch session"
 pick = "tmux list-sessions -F '#S' | fzf"
 run = "tmux switch-client -t {}"
-
-[t.w]
-label = "start/switch workspace (claude)"
-call = "menyy.tmux:workspace_launch"
-
-[t.z]
-label = "start/switch session in zoxide dir"
-pick_call = "menyy.pickers:zoxide"
-call = "menyy.tmux:workspace_launch"
 
 [t.S]
 label = "save tmux session snapshot"
