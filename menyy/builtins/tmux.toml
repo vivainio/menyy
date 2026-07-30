@@ -10,6 +10,11 @@ label = "start/switch workspace in zoxide dir"
 pick_call = "menyy.pickers:zoxide"
 call = "menyy.workspace:launch"
 
+[t.a]
+label = "restart and resume agent"
+call = "menyy.agent:restart"
+keep_open = true
+
 [t.k]
 label = "kill other panes"
 run = "tmux kill-pane -a"

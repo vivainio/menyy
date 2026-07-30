@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -69,6 +70,49 @@ def kill_idle_shells() -> None:
         print(f"killed {label} ({cmd})")
         killed += 1
     print(f"killed {killed} idle shell pane(s)")
+
+
+def _pane_command(target: str) -> str:
+    result = subprocess.run(
+        ["tmux", "display-message", "-p", "-t", target, "#{pane_current_command}"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        message = result.stderr.strip() or "pane not found"
+        sys.exit(f"menyy: tmux could not inspect pane {target}: {message}")
+    return result.stdout.strip()
+
+
+def _wait_for_shell(target: str, timeout: float = 10.0) -> None:
+    deadline = time.monotonic() + timeout
+    while _pane_command(target) not in IDLE_SHELLS:
+        if time.monotonic() >= deadline:
+            sys.exit("menyy: agent did not exit after Ctrl+D")
+        time.sleep(0.1)
+
+
+def restart_agent() -> None:
+    """Restart and resume the Codex or Claude agent in the originating pane."""
+    target = os.environ.get("TMUX_PANE")
+    if not target:
+        sys.exit("menyy: TMUX_PANE is not set")
+
+    kind = _pane_command(target)
+    commands = {
+        "codex": "codex resume --last",
+        "claude": "claude --continue",
+    }
+    command = commands.get(kind)
+    if command is None:
+        sys.exit(f"menyy: pane {target} is not running Codex or Claude (found {kind or 'nothing'})")
+
+    subprocess.run(["tmux", "send-keys", "-t", target, "C-c"], check=True)
+    time.sleep(0.2)
+    subprocess.run(["tmux", "send-keys", "-t", target, "C-d"], check=True)
+    _wait_for_shell(target)
+    subprocess.run(["tmux", "send-keys", "-t", target, command, "Enter"], check=True)
 
 
 def snapshot_path() -> Path:
