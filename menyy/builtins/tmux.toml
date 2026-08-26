@@ -21,7 +21,7 @@ run = "tmux kill-pane -a"
 
 [t.K]
 label = "kill all panes running only idle shell"
-call = "menyy.tmux:kill_idle_shells"
+call = "menyy.panes:kill_idle_shells"
 keep_open = true
 
 [t.r]

@@ -346,3 +346,37 @@ def test_restart_agent_does_not_send_eof_after_interrupt_exits_agent(
     herdr.restart_agent()
 
     assert ["agent", "send-keys", "w1:p1", "ctrl+d"] not in calls
+
+
+def test_kill_idle_shells_closes_only_idle_shell_panes(monkeypatch: Any) -> None:
+    monkeypatch.setenv("HERDR_ACTIVE_PANE_ID", "w1:p1")
+    monkeypatch.setattr(
+        herdr,
+        "_panes",
+        lambda: [
+            {"pane_id": "w1:p1", "terminal_title_stripped": "current"},
+            {"pane_id": "w1:p2", "terminal_title_stripped": "shell"},
+            {"pane_id": "w1:p3", "terminal_title_stripped": "claude"},
+        ],
+    )
+
+    process_info = {
+        "w1:p2": {"foreground_processes": [{"name": "bash"}]},
+        "w1:p3": {"foreground_processes": [{"name": "claude"}]},
+    }
+    calls: list[list[str]] = []
+
+    def fake_run_json(args: list[str]) -> dict[str, Any]:
+        calls.append(args)
+        if args[:2] == ["pane", "process-info"]:
+            return {"result": {"process_info": process_info[args[3]]}}
+        return {"result": {}}
+
+    monkeypatch.setattr(herdr, "_run_json", fake_run_json)
+
+    herdr.kill_idle_shells()
+
+    assert ["pane", "process-info", "--pane", "w1:p1"] not in calls
+    assert ["pane", "process-info", "--pane", "w1:p2"] in calls
+    assert ["pane", "close", "w1:p2"] in calls
+    assert ["pane", "close", "w1:p3"] not in calls

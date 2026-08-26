@@ -9,6 +9,8 @@ import time
 from pathlib import Path
 from typing import Any
 
+from menyy.tmux import IDLE_SHELLS
+
 
 def _run_json(args: list[str]) -> dict[str, Any]:
     try:
@@ -101,6 +103,39 @@ def workspace_launch(dir_: str | None = None) -> None:
     if check.returncode == 0 and check.stdout.strip():
         agent_args.extend(["--", "--continue"])
     _start_agent(agent_args)
+
+
+def _panes() -> list[dict[str, Any]]:
+    panes = _result(_run_json(["pane", "list"])).get("panes")
+    if not isinstance(panes, list):
+        sys.exit("menyy: herdr response has no pane list")
+    return [pane for pane in panes if isinstance(pane, dict)]
+
+
+def kill_idle_shells() -> None:
+    current = os.environ.get("HERDR_ACTIVE_PANE_ID") or os.environ.get("HERDR_PANE_ID")
+    killed = 0
+    for pane in _panes():
+        pane_id = pane.get("pane_id")
+        if not isinstance(pane_id, str) or pane_id == current:
+            continue
+        process_info = _result(_run_json(["pane", "process-info", "--pane", pane_id])).get(
+            "process_info"
+        )
+        if not isinstance(process_info, dict):
+            continue
+        foreground = process_info.get("foreground_processes")
+        if not isinstance(foreground, list) or len(foreground) != 1:
+            continue
+        process = foreground[0]
+        name = process.get("name") if isinstance(process, dict) else None
+        if name not in IDLE_SHELLS:
+            continue
+        _run_json(["pane", "close", pane_id])
+        label = pane.get("terminal_title_stripped") or pane_id
+        print(f"killed {label} ({name})")
+        killed += 1
+    print(f"killed {killed} idle shell pane(s)")
 
 
 def _agent_present(target: str) -> bool:
