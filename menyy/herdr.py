@@ -112,6 +112,25 @@ def _panes() -> list[dict[str, Any]]:
     return [pane for pane in panes if isinstance(pane, dict)]
 
 
+def _close_if_idle_shell(pane: dict[str, Any], pane_id: str) -> bool:
+    process_info = _result(_run_json(["pane", "process-info", "--pane", pane_id])).get(
+        "process_info"
+    )
+    if not isinstance(process_info, dict):
+        return False
+    foreground = process_info.get("foreground_processes")
+    if not isinstance(foreground, list) or len(foreground) != 1:
+        return False
+    process = foreground[0]
+    name = process.get("name") if isinstance(process, dict) else None
+    if name not in IDLE_SHELLS:
+        return False
+    _run_json(["pane", "close", pane_id])
+    label = pane.get("terminal_title_stripped") or pane_id
+    print(f"killed {label} ({name})")
+    return True
+
+
 def kill_idle_shells() -> None:
     current = os.environ.get("HERDR_ACTIVE_PANE_ID") or os.environ.get("HERDR_PANE_ID")
     killed = 0
@@ -119,22 +138,11 @@ def kill_idle_shells() -> None:
         pane_id = pane.get("pane_id")
         if not isinstance(pane_id, str) or pane_id == current:
             continue
-        process_info = _result(_run_json(["pane", "process-info", "--pane", pane_id])).get(
-            "process_info"
-        )
-        if not isinstance(process_info, dict):
-            continue
-        foreground = process_info.get("foreground_processes")
-        if not isinstance(foreground, list) or len(foreground) != 1:
-            continue
-        process = foreground[0]
-        name = process.get("name") if isinstance(process, dict) else None
-        if name not in IDLE_SHELLS:
-            continue
-        _run_json(["pane", "close", pane_id])
-        label = pane.get("terminal_title_stripped") or pane_id
-        print(f"killed {label} ({name})")
-        killed += 1
+        try:
+            killed += _close_if_idle_shell(pane, pane_id)
+        except SystemExit as error:
+            # A pane may vanish or refuse to close; keep going with the rest.
+            print(f"skipped {pane_id}: {error.code}", file=sys.stderr)
     print(f"killed {killed} idle shell pane(s)")
 
 

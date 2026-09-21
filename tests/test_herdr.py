@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from typing import Any
 
 from menyy import herdr
@@ -380,3 +381,27 @@ def test_kill_idle_shells_closes_only_idle_shell_panes(monkeypatch: Any) -> None
     assert ["pane", "process-info", "--pane", "w1:p2"] in calls
     assert ["pane", "close", "w1:p2"] in calls
     assert ["pane", "close", "w1:p3"] not in calls
+
+
+def test_kill_idle_shells_continues_after_pane_failure(monkeypatch: Any, capsys: Any) -> None:
+    monkeypatch.delenv("HERDR_ACTIVE_PANE_ID", raising=False)
+    monkeypatch.delenv("HERDR_PANE_ID", raising=False)
+    monkeypatch.setattr(herdr, "_panes", lambda: [{"pane_id": "w1:p2"}, {"pane_id": "w1:p3"}])
+    calls: list[list[str]] = []
+
+    def fake_run_json(args: list[str]) -> dict[str, Any]:
+        calls.append(args)
+        if args[:2] == ["pane", "process-info"]:
+            return {"result": {"process_info": {"foreground_processes": [{"name": "bash"}]}}}
+        if args == ["pane", "close", "w1:p2"]:
+            sys.exit("menyy: herdr pane close w1:p2 failed: gone")
+        return {"result": {}}
+
+    monkeypatch.setattr(herdr, "_run_json", fake_run_json)
+
+    herdr.kill_idle_shells()
+
+    assert ["pane", "close", "w1:p3"] in calls
+    captured = capsys.readouterr()
+    assert "skipped w1:p2" in captured.err
+    assert "killed 1 idle shell pane(s)" in captured.out
