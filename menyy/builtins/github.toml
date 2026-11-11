@@ -1,0 +1,47 @@
+[h]
+label = "github"
+
+[h.p]
+label = "my open PRs: open in browser"
+pick_call = "menyy.pickers:my_prs"
+run = "zh gh pr view --web {}"
+
+[h.c]
+label = "my open PRs: checkout"
+pick_call = "menyy.pickers:my_prs"
+run = "zh gh pr checkout {}"
+keep_open = true
+
+[h.k]
+label = "my open PRs: checks"
+pick_call = "menyy.pickers:my_prs"
+run = "zh gh pr checks {}"
+keep_open = true
+
+[h.y]
+label = "my open PRs: copy URL"
+pick_call = "menyy.pickers:my_prs"
+run = "zh gh pr view {} --json url -q .url | tr -d '\\n' | $MENYY --copy"
+
+[h.s]
+label = "PR status (mine, review requests)"
+run = "zh gh pr status"
+keep_open = true
+
+[h.v]
+label = "current branch PR: view"
+run = "zh gh pr view"
+keep_open = true
+
+[h.w]
+label = "current branch PR: open in browser"
+run = "zh gh pr view --web"
+
+[h.n]
+label = "create PR from current branch"
+run = "zh gh pr create --fill"
+keep_open = true
+
+[h.r]
+label = "open repo in browser"
+run = "zh gh repo view --web"

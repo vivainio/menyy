@@ -112,6 +112,7 @@ hide = true
 
 - **defaults** — top-level fall-throughs.
 - **git** — common git operations, branch picker, recent-branches.
+- **github** — GitHub actions under `h` (run through `zh gh` so the repo owner's token is used): pick one of your open PRs (open, checkout, checks, copy URL), PR status, current-branch PR, create PR, open repo.
 - **tmux** — terminal and workspace actions under `t`; workspace launches use Herdr or tmux based on the active environment.
 - **fs** — open file manager, copy file path (relative or absolute).
 
