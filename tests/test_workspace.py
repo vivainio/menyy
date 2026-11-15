@@ -30,6 +30,7 @@ def test_launch_uses_herdr_when_available(monkeypatch: Any) -> None:
 def test_launch_uses_tmux_outside_herdr(monkeypatch: Any) -> None:
     calls: list[tuple[str, str | None]] = []
     monkeypatch.delenv("HERDR_ENV", raising=False)
+    monkeypatch.delenv("HC_TERMINAL_ID", raising=False)
     monkeypatch.setenv("TMUX", "present")
     monkeypatch.setattr(
         workspace.tmux,
@@ -44,6 +45,7 @@ def test_launch_uses_tmux_outside_herdr(monkeypatch: Any) -> None:
 
 def test_launch_requires_workspace_manager(monkeypatch: Any) -> None:
     monkeypatch.delenv("HERDR_ENV", raising=False)
+    monkeypatch.delenv("HC_TERMINAL_ID", raising=False)
     monkeypatch.delenv("TMUX", raising=False)
 
     with pytest.raises(SystemExit, match="requires Herdr or tmux"):

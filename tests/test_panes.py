@@ -20,6 +20,7 @@ def test_kill_idle_shells_uses_herdr_when_available(monkeypatch: Any) -> None:
 def test_kill_idle_shells_uses_tmux_outside_herdr(monkeypatch: Any) -> None:
     calls: list[str] = []
     monkeypatch.delenv("HERDR_ENV", raising=False)
+    monkeypatch.delenv("HC_TERMINAL_ID", raising=False)
     monkeypatch.setenv("TMUX", "present")
     monkeypatch.setattr(panes.tmux, "kill_idle_shells", lambda: calls.append("tmux"))
 
@@ -30,6 +31,7 @@ def test_kill_idle_shells_uses_tmux_outside_herdr(monkeypatch: Any) -> None:
 
 def test_kill_idle_shells_requires_terminal_manager(monkeypatch: Any) -> None:
     monkeypatch.delenv("HERDR_ENV", raising=False)
+    monkeypatch.delenv("HC_TERMINAL_ID", raising=False)
     monkeypatch.delenv("TMUX", raising=False)
 
     panes.kill_idle_shells()
