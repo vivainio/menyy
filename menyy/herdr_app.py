@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -41,8 +42,35 @@ def _run(tool: str, args: list[str]) -> Any:
         sys.exit(f"menyy: {tool} returned invalid JSON: {out}")
 
 
+def _windows_app() -> str | None:
+    cmd = shutil.which("cmd.exe") or "/mnt/c/Windows/System32/cmd.exe"
+    try:
+        result = subprocess.run(
+            [cmd, "/d", "/c", "where.exe", "$PATH:herdr-app.exe"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode == 0:
+            for path in result.stdout.splitlines():
+                converted = subprocess.run(
+                    ["wslpath", "-u", path.strip()],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                if converted.returncode == 0 and (app := shutil.which(converted.stdout.strip())):
+                    return app
+    except OSError:
+        pass
+    return None
+
+
 def _app(args: list[str]) -> Any:
-    return _run("herdr-app", args)
+    tool = shutil.which("herdr-app")
+    if tool is None and sys.platform == "linux" and "microsoft" in os.uname().release.lower():
+        tool = shutil.which("herdr-app.exe") or _windows_app()
+    return _run(tool or "herdr-app", args)
 
 
 def _hc(args: list[str]) -> Any:
